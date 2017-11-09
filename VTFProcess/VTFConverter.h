@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VTFLib13/VTFWrapper.h"
+#include <VTFLib13/VTFWrapper.h>
 #include <vector>
 
 class VTFConverter

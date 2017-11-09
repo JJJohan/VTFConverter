@@ -1,6 +1,8 @@
 #include "VTFConverter.h"
-#include "VTFLib13/VTFLib.h"
-#include "VTFLib13/VMTWrapper.h"
+#include <VTFLib13/VTFLib.h>
+#include <VTFLib13/VMTWrapper.h>
+#include <ImageMagick-6/Magick++/Image.h>
+#include <ImageMagick-6/Magick++/Exception.h>
 #include <iostream>
 
 VTFConverter::VTFConverter()
@@ -17,7 +19,19 @@ VTFConverter::VTFConverter()
 
 bool VTFConverter::ReadData(std::vector<char> inputData)
 {
-	return false;
+	Magick::Image image;
+	
+	try
+	{
+		image.read(inputData.data());
+	}
+	catch (Magick::Exception& error)
+	{
+		std::cout << error.what() << std::endl;
+		return false;
+	}
+
+	return true;
 }
 
 VTFConverter::~VTFConverter()
