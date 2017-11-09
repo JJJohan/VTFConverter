@@ -7,14 +7,17 @@ int main(int argc, char* argv[])
 {
 	std::cout << "VTF Process" << std::endl;
 
-	if (argc != 2)
+	/*if (argc != 2)
 	{
 		std::cout << "No file path provided." << std::endl;
 		return 1;
-	}
+	}*/
+
+	//std::string filePath = argv[1];
+	std::string filePath = "/mnt/c/Users/admin/Pictures/after.jpg";
 
 	// Open file.
-	std::ifstream inputFile(argv[1], std::ios::in | std::ios::binary | std::ios::ate);
+	std::ifstream inputFile(filePath, std::ios::in | std::ios::binary | std::ios::ate);
 	if (inputFile.is_open())
 	{
 		const std::streamsize size = inputFile.tellg();

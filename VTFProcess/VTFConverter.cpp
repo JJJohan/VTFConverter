@@ -23,7 +23,9 @@ bool VTFConverter::ReadData(std::vector<char> inputData)
 	
 	try
 	{
-		image.read(inputData.data());
+		const Magick::Blob blob(inputData.data(), inputData.size());
+		image.read(blob);
+		std::cout << "Data read! Format: " << image.format() << std::endl;
 	}
 	catch (Magick::Exception& error)
 	{
