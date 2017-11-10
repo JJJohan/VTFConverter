@@ -6,12 +6,14 @@
 class VTFConverter
 {
 public:
-	VTFConverter();
+	VTFConverter(int width, int height);
 	~VTFConverter();
 
 	bool ReadData(std::vector<char> inputData);
 
 private:
-	vlUInt uiVTFImage;
-	vlUInt uiVMTMaterial;
+	int _width;
+	int _height;
+	vlUInt _image;
+	vlUInt _material;
 };
