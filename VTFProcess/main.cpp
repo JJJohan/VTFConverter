@@ -3,8 +3,9 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <stdio.h>
 
-int StringToInt(std::string string)
+int StringToInt(const std::string string)
 {
 	std::stringstream stream(string);
 	int integer;
@@ -12,28 +13,45 @@ int StringToInt(std::string string)
 	return integer;
 }
 
+bool IsPowerOfTwo(const int value)
+{
+	return (value & (value - 1)) == 0;
+}
+
 int main(int argc, char* argv[])
 {
-	std::cout << "VTF Process" << std::endl;
+	remove("output.log");
+	remove("output.vtf");
 
-	/*if (argc < 2)
+	if (argc < 2)
 	{
-		std::cout << "No file path provided." << std::endl;
+		VTFConverter::LogError("No file path provided.");
 		return 1;
-	}*/
+	}
 
-	//std::string filePath = argv[1];
+	const std::string filePath = argv[1];
 	std::string width = "256";
 	std::string height = "256";
 	if (argc == 4)
 	{
-		width = argv[3];
-		height = argv[4];
+		width = argv[2];
+		height = argv[3];
 	}
 
-	std::string filePath = "/mnt/c/Users/admin/Pictures/after.jpg";
-	int widthVal = StringToInt(width);
-	int heightVal = StringToInt(height);
+	const int widthVal = StringToInt(width);
+	const int heightVal = StringToInt(height);
+
+	if (widthVal == 0 || heightVal == 0)
+	{
+		VTFConverter::LogError("Invalid values given for requested image dimensions.");
+		return 1;
+	}
+
+	if (!IsPowerOfTwo(widthVal) || !IsPowerOfTwo(heightVal))
+	{
+		VTFConverter::LogError("Width and height both need to be power of two.");
+		return 1;
+	}
 
 	// Open file.
 	std::ifstream inputFile(filePath, std::ios::in | std::ios::binary | std::ios::ate);
@@ -50,26 +68,27 @@ int main(int argc, char* argv[])
 			std::vector<char> output = converter.ReadData(buffer);
 			if (!output.empty())
 			{
-				std::ofstream outStream("/mnt/c/Users/admin/Desktop/test.vtf");
+				std::ofstream outStream("output.vtf");
 				outStream.write(output.data(), output.size());
+				outStream.close();
 			}
 			else
 			{
-				std::cout << "Data provided is not a valid or supported image format." << std::endl;
+				VTFConverter::LogError("Data provided is not valid or not a supported image format.");
 				return 1;
 			}
 		}
 		else
 		{
-			std::cout << "Failed to read file: " << argv[1] << std::endl;
+			VTFConverter::LogError(std::string("Failed to read file: ") + std::string(argv[1]));
 			return 1;
 		}
 	}
 	else
 	{
-		std::cout << "Failed to open file: " << argv[1] << std::endl;
+		VTFConverter::LogError(std::string("Failed to open file: ") + std::string(argv[1]));
 		return 1;
 	}
-	
-    return 0;
+
+	return 0;
 }

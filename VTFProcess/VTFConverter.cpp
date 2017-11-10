@@ -2,15 +2,14 @@
 #include <VTFLib13/VTFLib.h>
 #include <VTFLib13/VMTWrapper.h>
 #include <FreeImage.h>
-#include <iostream>
 #include <fstream>
 #include <vector>
+#include <iostream>
 
 VTFConverter::VTFConverter(const int width, const int height)
 	: _width(width)
 	, _height(height)
 {
-	std::cout << "Initialising VTF Converter." << std::endl;
 	vlInitialize();
 
 	vlCreateImage(&_image);
@@ -22,8 +21,8 @@ VTFConverter::VTFConverter(const int width, const int height)
 	FreeImage_Initialise();
 }
 
-std::vector<char> VTFConverter::ReadData(std::vector<char> inputData)
-{	
+std::vector<char> VTFConverter::ReadData(std::vector<char> inputData) const
+{
 	// Read the image.
 	FIMEMORY* imageMemory = FreeImage_OpenMemory(reinterpret_cast<BYTE*>(inputData.data()), DWORD(inputData.size()));
 	const FREE_IMAGE_FORMAT imageType = FreeImage_GetFileTypeFromMemory(imageMemory, 0);
@@ -61,30 +60,36 @@ std::vector<char> VTFConverter::ReadData(std::vector<char> inputData)
 
 	// Convert to VTF.
 	const vlBool createImage = vlImageCreateSingle(_width, _height, static_cast<vlByte*>(pixelData), &createOptions);
-	
+
 	if (!createImage)
 	{
-		std::cout << vlGetLastError() << std::endl;
+		LogError(vlGetLastError());
 		return std::vector<char>();
 	}
 
-	vlUInt vtfSize = vlImageGetSize();
+	const vlUInt vtfSize = vlImageGetSize();
 	std::vector<char> output(vtfSize);
 
 	vlSize unused;
 	if (!vlImageSaveLump(output.data(), vtfSize, &unused))
 	{
-		std::cout << vlGetLastError() << std::endl;
+		LogError(vlGetLastError());
 		return std::vector<char>();
 	}
-	
+
 	return output;
+}
+
+void VTFConverter::LogError(const std::string& string)
+{
+	std::cout << string << std::endl;
+	std::ofstream logStream("output.log");
+	logStream << string;
+	logStream.close();
 }
 
 VTFConverter::~VTFConverter()
 {
-	std::cout << "Shutting down VTF Converter." << std::endl;
-
 	FreeImage_DeInitialise();
 
 	vlDeleteMaterial(_material);
