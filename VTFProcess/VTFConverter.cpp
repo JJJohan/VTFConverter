@@ -1,8 +1,7 @@
 #include "VTFConverter.h"
 #include <VTFLib13/VTFLib.h>
 #include <VTFLib13/VMTWrapper.h>
-#include <ImageMagick-6/Magick++/Image.h>
-#include <ImageMagick-6/Magick++/Exception.h>
+#include <Magick++.h>
 #include <iostream>
 
 VTFConverter::VTFConverter()
