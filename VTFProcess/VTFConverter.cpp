@@ -9,6 +9,7 @@
 VTFConverter::VTFConverter(const int width, const int height)
 	: _width(width)
 	, _height(height)
+    , _fileSize(0)
 {
 	vlInitialize();
 
@@ -21,7 +22,7 @@ VTFConverter::VTFConverter(const int width, const int height)
 	FreeImage_Initialise();
 }
 
-std::vector<char> VTFConverter::ReadData(std::vector<char> inputData) const
+std::vector<char> VTFConverter::ReadData(std::vector<char> inputData)
 {
 	// Read the image.
 	FIMEMORY* imageMemory = FreeImage_OpenMemory(reinterpret_cast<BYTE*>(inputData.data()), DWORD(inputData.size()));
@@ -29,14 +30,16 @@ std::vector<char> VTFConverter::ReadData(std::vector<char> inputData) const
 	FIBITMAP* image = FreeImage_LoadFromMemory(imageType, imageMemory);
 	FreeImage_CloseMemory(imageMemory);
 
+	_originalFormat = FreeImage_GetFormatFromFIF(imageType);
+
 	const bool isAlpha = FreeImage_IsTransparent(image);
+	image = FreeImage_ConvertTo32Bits(image);
 
 	// Resize the image.
 	image = FreeImage_Rescale(image, _width, _height);
 	FreeImage_FlipVertical(image);
 
 	// Write image data to raw buffer.
-	image = FreeImage_ConvertTo32Bits(image);
 	BYTE* pixelData = FreeImage_GetBits(image);
 	FreeImage_Unload(image);
 
@@ -67,11 +70,11 @@ std::vector<char> VTFConverter::ReadData(std::vector<char> inputData) const
 		return std::vector<char>();
 	}
 
-	const vlUInt vtfSize = vlImageGetSize();
-	std::vector<char> output(vtfSize);
+	_fileSize = vlImageGetSize();
+	std::vector<char> output(_fileSize);
 
 	vlSize unused;
-	if (!vlImageSaveLump(output.data(), vtfSize, &unused))
+	if (!vlImageSaveLump(output.data(), _fileSize, &unused))
 	{
 		LogError(vlGetLastError());
 		return std::vector<char>();
@@ -80,11 +83,27 @@ std::vector<char> VTFConverter::ReadData(std::vector<char> inputData) const
 	return output;
 }
 
+void VTFConverter::LogResults() const
+{
+	// Some manually printed JSON, no need for a third party library here.
+	std::ofstream logStream("output.json");
+	logStream << "{" << std::endl;
+	logStream << "\t\"success\": true," << std::endl;
+	logStream << "\t\"fileSize\": " << _fileSize << "," << std::endl;
+	logStream << "\t\"originalFormat\": \"" << _originalFormat << "\"" << std::endl;
+	logStream << "}" << std::endl;
+	logStream.close();
+}
+
 void VTFConverter::LogError(const std::string& string)
 {
+	// Some manually printed JSON, no need for a third party library here.
 	std::cout << string << std::endl;
-	std::ofstream logStream("output.log");
-	logStream << string;
+	std::ofstream logStream("output.json");
+	logStream << "{" << std::endl;
+	logStream << "\t\"success\": false," << std::endl;
+	logStream << "\t\"message\": \"" << string << "\"" << std::endl;
+	logStream << "}" << std::endl;
 	logStream.close();
 }
 

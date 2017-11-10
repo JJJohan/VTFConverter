@@ -20,7 +20,7 @@ bool IsPowerOfTwo(const int value)
 
 int main(int argc, char* argv[])
 {
-	remove("output.log");
+	remove("output.json");
 	remove("output.vtf");
 
 	if (argc < 2)
@@ -71,6 +71,8 @@ int main(int argc, char* argv[])
 				std::ofstream outStream("output.vtf");
 				outStream.write(output.data(), output.size());
 				outStream.close();
+
+				converter.LogResults();
 			}
 			else
 			{
@@ -80,13 +82,13 @@ int main(int argc, char* argv[])
 		}
 		else
 		{
-			VTFConverter::LogError(std::string("Failed to read file: ") + std::string(argv[1]));
+			VTFConverter::LogError("Failed to read file.");
 			return 1;
 		}
 	}
 	else
 	{
-		VTFConverter::LogError(std::string("Failed to open file: ") + std::string(argv[1]));
+		VTFConverter::LogError("Failed to open file.");
 		return 1;
 	}
 
