@@ -11,8 +11,8 @@ This project has been set up with Visual Studio with the intention of compiling 
 In theory you can build this with your IDE of choice, but no CMake files have been provided.
 
 Pre-requisite packages: 
-* libmagick++-dev - Used for reading a common selection of image formats.
-* build-essentials - Simple quickstart package for compile tools.
+* libfreeimage-dev - Used for reading a common selection of image formats.
+* build-essential - Simple quickstart package for compile tools.
 * gdb - For Visual Studio / WSL.
 * gdbserver - For Visual Studio / WSL.
 * vtflib - (no apt package available, use the linux port provided here: https://github.com/panzi/VTFLib)

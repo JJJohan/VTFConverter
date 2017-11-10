@@ -9,7 +9,7 @@ public:
 	VTFConverter(int width, int height);
 	~VTFConverter();
 
-	bool ReadData(std::vector<char> inputData);
+	std::vector<char> ReadData(std::vector<char> inputData);
 
 private:
 	int _width;

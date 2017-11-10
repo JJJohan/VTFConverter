@@ -1,9 +1,10 @@
 #include "VTFConverter.h"
 #include <VTFLib13/VTFLib.h>
 #include <VTFLib13/VMTWrapper.h>
-#include <ImageMagick-6/Magick++/Image.h>
-#include <ImageMagick-6/Magick++/Exception.h>
+#include <FreeImage.h>
 #include <iostream>
+#include <fstream>
+#include <vector>
 
 VTFConverter::VTFConverter(const int width, const int height)
 	: _width(width)
@@ -17,45 +18,74 @@ VTFConverter::VTFConverter(const int width, const int height)
 
 	vlCreateMaterial(&_material);
 	vlBindMaterial(_material);
+
+	FreeImage_Initialise();
 }
 
-bool VTFConverter::ReadData(std::vector<char> inputData)
-{
-	Magick::Image image;
+std::vector<char> VTFConverter::ReadData(std::vector<char> inputData)
+{	
+	// Read the image.
+	FIMEMORY* imageMemory = FreeImage_OpenMemory(reinterpret_cast<BYTE*>(inputData.data()), DWORD(inputData.size()));
+	const FREE_IMAGE_FORMAT imageType = FreeImage_GetFileTypeFromMemory(imageMemory, 0);
+	FIBITMAP* image = FreeImage_LoadFromMemory(imageType, imageMemory);
+	FreeImage_CloseMemory(imageMemory);
+
+	const bool isAlpha = FreeImage_IsTransparent(image);
+
+	// Resize the image.
+	image = FreeImage_Rescale(image, _width, _height);
+	FreeImage_FlipVertical(image);
+
+	// Write image data to raw buffer.
+	image = FreeImage_ConvertTo32Bits(image);
+	BYTE* pixelData = FreeImage_GetBits(image);
+	FreeImage_Unload(image);
+
+	// Convert BGRA > RGBA.
+	size_t totalSize = _width * _height * 4;
+	for (size_t i = 0; i < totalSize; i += 4)
+	{
+		size_t i2 = i + 2;
+		const BYTE tmp = pixelData[i2];
+		pixelData[i2] = pixelData[i];
+		pixelData[i] = tmp;
+	}
+
+	// Prepare VTF options.
+	SVTFCreateOptions createOptions;
+	createOptions.uiVersion[0] = 7;
+	createOptions.uiVersion[1] = 5;
+	createOptions.bNormalMap = false;
+	createOptions.bMipmaps = false;
+	createOptions.ImageFormat = isAlpha ? IMAGE_FORMAT_DXT5 : IMAGE_FORMAT_DXT1;
+
+	// Convert to VTF.
+	const vlBool createImage = vlImageCreateSingle(_width, _height, static_cast<vlByte*>(pixelData), &createOptions);
 	
-	try
+	if (!createImage)
 	{
-		// Read and resize the input image.
-		const Magick::Blob readBuffer(inputData.data(), inputData.size());
-		image.read(readBuffer);
-		image.resize(Magick::Geometry(_width, _height));
-
-		// Read into RGBA buffer.
-		Magick::Blob rgbaBuffer;
-		image.write(rgbaBuffer);
-
-		SVTFCreateOptions createOptions;
-		createOptions.ImageFormat = image.format() == "rgba" ? IMAGE_FORMAT_DXT5 : IMAGE_FORMAT_DXT1;
-
-		// Convert to VTF.
-		if (!vlImageCreateSingle(_width, _height, rgbaBuffer.data(), &createOptions))
-		{
-			std::cout << "Failed to convert to VTF." << std::endl;
-			return false;
-		}
-	}
-	catch (Magick::Exception& error)
-	{
-		std::cout << error.what() << std::endl;
-		return false;
+		std::cout << vlGetLastError() << std::endl;
+		return std::vector<char>();
 	}
 
-	return true;
+	vlUInt vtfSize = vlImageGetSize();
+	std::vector<char> output(vtfSize);
+
+	vlSize unused;
+	if (!vlImageSaveLump(output.data(), vtfSize, &unused))
+	{
+		std::cout << vlGetLastError() << std::endl;
+		return std::vector<char>();
+	}
+	
+	return output;
 }
 
 VTFConverter::~VTFConverter()
 {
 	std::cout << "Shutting down VTF Converter." << std::endl;
+
+	FreeImage_DeInitialise();
 
 	vlDeleteMaterial(_material);
 	vlDeleteImage(_image);

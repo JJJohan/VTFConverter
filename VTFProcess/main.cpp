@@ -16,11 +16,11 @@ int main(int argc, char* argv[])
 {
 	std::cout << "VTF Process" << std::endl;
 
-	if (argc < 2)
+	/*if (argc < 2)
 	{
 		std::cout << "No file path provided." << std::endl;
 		return 1;
-	}
+	}*/
 
 	//std::string filePath = argv[1];
 	std::string width = "256";
@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
 		height = argv[4];
 	}
 
-	std::string filePath = "/mnt/c/Users/admin/Pictures/after.png";
+	std::string filePath = "/mnt/c/Users/admin/Pictures/after.jpg";
 	int widthVal = StringToInt(width);
 	int heightVal = StringToInt(height);
 
@@ -47,9 +47,11 @@ int main(int argc, char* argv[])
 		{
 			// Convert the file.
 			VTFConverter converter(widthVal, heightVal);
-			if (converter.ReadData(buffer))
+			std::vector<char> output = converter.ReadData(buffer);
+			if (!output.empty())
 			{
-				
+				std::ofstream outStream("/mnt/c/Users/admin/Desktop/test.vtf");
+				outStream.write(output.data(), output.size());
 			}
 			else
 			{
